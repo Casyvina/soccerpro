@@ -8,6 +8,7 @@ from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import pandas as pd
+from openpyxl.styles import PatternFill, Font
 from settings import prev_proxies, proxies, default_proxy, global_url
 
 driver = None
@@ -26,31 +27,108 @@ score2 = None
 today = datetime.date.today()
 selection = "All"
 
+def calculate_abs(cellvalue):
+    try:
+        numbers = cellvalue.split('-')
+        num1 = int(numbers[0].strip())
+        num2 = int(numbers[1].strip())  
+        result = abs(num1 - num2)
+        return result
+    except:
+        return 0
 
+
+def get_analysis(e):
+    
+    # Get the total number of rows with content
+    total_rows = sheet.max_row
+
+    print("Total rows with content:", total_rows)
+    
+    for row in range(total_rows):
+  
+        if row == 0:
+            print("skip")
+            
+        else:
+            cellK = sheet["K" + str(row + 1)]
+            if str(cellK.value).lower() == "w":
+                cellK.fill = PatternFill("solid", fgColor="009999FF")
+                cellK.font = Font(bold=True, color="00FFFFFF")
+            
+            
+            cellN = sheet["N" + str(row + 1)]
+            if str(cellN.value).lower() == "w":
+                cellN.fill = PatternFill("solid", fgColor="00FFCC00")
+                cellK.font = Font(bold=True, color="00333333")
+            
+            
+            cellJ = sheet["J" + str(row + 1)]
+            cellJJ = calculate_abs(cellJ.value)
+    
+            if cellJJ > 2:
+                cellJ.fill = PatternFill("solid", fgColor="00008000")
+                cellJ.font = Font(bold=True, color="00FFFFFF")
+                
+            
+            cellM = sheet["M" + str(row + 1)]
+            cellMM = calculate_abs(cellM.value)
+
+            if cellMM > 3:
+                cellM.fill = PatternFill("solid", fgColor="00FF6600")
+                cellM.font = Font(bold=True, color="00FFFFFF")
+                
+                
+
+            if (cellJJ > 2) and (str(cellK.value).lower() == "w"):
+                row1 = sheet[row + 1]
+                
+                for index, r in enumerate(row1):
+                    r.fill = PatternFill("solid", fgColor="00CCFFFF")
+                    if index > len(sheet['A:V']):
+                        break
+ 
+                
+            if (cellJJ > 2) and (str(cellK.value).lower() == "w"):
+                row1 = sheet[row + 1]
+                
+                for index, r in enumerate(row1):
+                    r.fill = PatternFill("solid", fgColor="00CCFFFF")
+                    if index > len(sheet['A:V']):
+                        break
+                
+
+    
+    workbook.save(file_path)
+    os.startfile(file_path)
+
+    
 ### putting the score to the excel file.. back..
 def fill_score(all_scores):
     last_row = len(all_scores)
     
     font = openpyxl.styles.Font(bold=True, color="FF0000")
-    blue = openpyxl.styles.Font(bold=True, color="0000FF")
     blue = openpyxl.styles.Font(bold=True, color="00FF00")
     
     for row in range(0, last_row + 1):
     
         if row == 0:
-            cell = sheet["V" + str(row + 1)]
-            cell.value = "Scores"
-            cell.font = font
+            cellV = sheet["V" + str(row + 1)]
+            cellV.value = "Scores"
+            cellV.font = font
         else:
             sheet["V" + str(row + 1)] = all_scores[row - 1]
             
-            cell = sheet["T" + str(row + 1)]
-            if str(cell.value).lower() == "true":
-                cell.font = blue
+            cellT = sheet["T" + str(row + 1)]
+            if str(cellT.value).lower() == "true":
+                cellT.font = blue
                 
-            cell2 = sheet["U" + str(row + 1)]
-            if str(cell2.value).lower() == "true":
-                cell2.font = blue
+            cellU = sheet["U" + str(row + 1)]
+            if str(cellU.value).lower() == "true":
+                cellU.font = blue
+                
+                
+            
     
     workbook.save(file_path)
     os.startfile(file_path)
@@ -142,23 +220,23 @@ def auto_run_data(e):
         auto_run_btn.disabled = True
         auto_run_btn.update()
         
-        all_urls = get_all_matches_url()
+        all_urls = get_all_matches_url(e)
         
         open_new_tab(e)
         
-        data = url_process(all_urls)
+        data = url_process(e, all_urls)
         
         save_file(data=data)
 
         sleep(2)
         
-        firefox_close(e)
+        # firefox_close(e)
         
         sleep(2)
         
         auto_open()
 
-def url_process(all_urls):
+def url_process(e, all_urls):
     
     global driver, teams, home, away, p1, p2, p3, p4, h1, dX, w2, home_last_match, away_last_match, score1, score2
     
@@ -274,7 +352,7 @@ def save_file(data):
     df.to_excel(file_path, index=False)
     
 def my_hypothesis():
-    global p4, p1, symbol2
+    # global p4, p1, symbol2
     try:
         if (p4, p1, symbol2 ):
             if(p4 < p1) and ((symbol2 == "D" or symbol2 == "L")):
@@ -286,7 +364,7 @@ def my_hypothesis():
         return None
     
 def my_hypothesis2():
-    global p4, p1, symbol2, p2
+    # global p4, p1, symbol2, p2
     try:
         if (p4, p1, symbol2,  ):
             if(p4 < p1) and ((symbol2 == "D" or symbol2 == "L") and (p1 < p2 )):
@@ -296,6 +374,9 @@ def my_hypothesis2():
     except Exception as e:
         print(f"Error getting hypo")
         return None
+    
+
+
 
 def reset():
     global p1, p2, p3, p4, h1, dX, w2, home, away, score1, score2
@@ -774,6 +855,9 @@ def refresh_page(e):
         
         sleep(2)
         driver.get(global_url)
+        
+        auto_run_btn.disabled = False
+        auto_run_btn.update()
             
 def firefox_close(e):
     global driver, active
@@ -784,8 +868,7 @@ def firefox_close(e):
         driver = None
         open.disabled = False
         open.update()
-        auto_run_btn.disabled = False
-        auto_run_btn.update()
+
 
 def main(page: ft.Page):
     page.title = "SoccerProV1"
@@ -916,6 +999,8 @@ def main(page: ft.Page):
     
     scores_btn = ft.ElevatedButton("visit url", icon="TABLE_BAR_OUTLINED", on_click=get_all_scores)
     
+    analysis_btn = ft.ElevatedButton("Analysis", icon="SPORTS_BASEBALL", icon_color="yellow500", on_click=get_analysis)
+    
     selected_files = ft.Text()
     
     content2 = ft.Container(
@@ -924,6 +1009,7 @@ def main(page: ft.Page):
                         ft.Row([file_btn], alignment=ft.MainAxisAlignment.CENTER,),
                         ft.Row([selected_files], alignment=ft.MainAxisAlignment.CENTER,),
                         ft.Row([scores_broswer_btn, scores_btn], alignment=ft.MainAxisAlignment.CENTER,),
+                        ft.Row([analysis_btn], alignment=ft.MainAxisAlignment.CENTER,),
                     ], alignment=ft.MainAxisAlignment.CENTER,)
                 )
     

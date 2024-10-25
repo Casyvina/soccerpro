@@ -1,4 +1,5 @@
 import openpyxl
+from openpyxl.styles import PatternFill
 import os
 
 workbook = openpyxl.load_workbook("demo.xlsx")
@@ -10,17 +11,34 @@ start_col = 1
 end_row = 5
 end_col = 5
 
-
+# fill = PatternFill(fill_type=None,
+#                 start_color='FFFFFFFF',
+#                 end_color='FF000000')
 
 # Fill the range with numbers
 for row in range(start_row, end_row + 1):
     for col in range(start_col, end_col + 1):
         cell = sheet.cell(row=row, column=col)
         cell.value = row * col + 2
+        cell.fill = PatternFill("solid", fgColor="009999FF")
 
 # Save the updated workbook
 workbook.save("demo.xlsx")
 os.startfile("demo.xlsx")
+
+
+    # last_row = sheet.max_row
+    
+    # while last_row > 1:
+    #     row = sheet[last_row]
+    #     if any(cell.value for cell in row):
+    #         break  # Found a row with content
+    #     last_row -= 1
+
+    # # Access the last row with content
+    # last_row_data = sheet[last_row]
+    # for cell in last_row_data:
+    #     print(cell.value)
 
 
 # import openpyxl
