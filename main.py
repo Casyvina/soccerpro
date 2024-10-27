@@ -27,12 +27,24 @@ score2 = None
 today = datetime.date.today()
 selection = "All"
 
+def save():
+    workbook.save(file_path)
+    os.startfile(file_path)
+
 
 def fill_h2h(all_h2h):
-    last_row = len(all_scores)
+    last_row = len(all_h2h)
     
-    pass
-
+    for row in range(0, last_row + 1):
+        if row == 0:
+            cellV = sheet["W" + str(row + 1)]
+            cellV.value = "Scores"
+            cellV.font = Font(bold=True, color="FF0000")
+        
+        else:
+            sheet["W" + str(row + 1)] = all_h2h[row - 1]
+    save()
+    
 def open_url_h2h(url):
     global driver
     
@@ -259,31 +271,25 @@ def get_analysis(e):
 def fill_score(all_scores):
     last_row = len(all_scores)
     
-    font = openpyxl.styles.Font(bold=True, color="FF0000")
-    blue = openpyxl.styles.Font(bold=True, color="00FF00")
-    
     for row in range(0, last_row + 1):
     
         if row == 0:
             cellV = sheet["V" + str(row + 1)]
             cellV.value = "Scores"
-            cellV.font = font
+            cellV.font = Font(bold=True, color="FF0000")
         else:
             sheet["V" + str(row + 1)] = all_scores[row - 1]
             
             cellT = sheet["T" + str(row + 1)]
             if str(cellT.value).lower() == "true":
-                cellT.font = blue
+                cellT.font = Font(bold=True, color="00FF00")
                 
             cellU = sheet["U" + str(row + 1)]
             if str(cellU.value).lower() == "true":
-                cellU.font = blue
+                cellU.font = Font(bold=True, color="00FF00")    
                 
-                
-            
+    save()   
     
-    workbook.save(file_path)
-    os.startfile(file_path)
 
 def get_all_scores(e):
     global driver
@@ -343,6 +349,7 @@ def column_b_url():
     for url in urls[1:]:
         scores_urls.append(url)
     
+    print(scores_urls)
     return scores_urls
 
 def open_file(e: ft.FilePickerResultEvent):
