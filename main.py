@@ -27,6 +27,163 @@ score2 = None
 today = datetime.date.today()
 selection = "All"
 
+
+def fill_h2h(all_h2h):
+    last_row = len(all_scores)
+    
+    pass
+
+def open_url_h2h(url):
+    global driver
+    
+    if driver:
+        driver.get(url)
+        
+        driver.implicitly_wait(40)
+        
+        sleep(2)
+        # click the h2h 
+        
+        h2h_tab = driver.find_element(By.XPATH, "//button[normalize-space()='H2H']")
+        h2h_tab.click()
+        
+        sleep(2)
+        h2h_result = get_h2h_total()
+        return h2h_result
+        
+        
+
+def get_h2h_total_old(e):
+    
+    try:
+        scores_urls = column_b_url()
+        all_h2h = []
+        
+        if driver:
+            
+            for url in scores_urls:
+                sleep(3)
+                h2h = open_url_h2h(url)
+                all_h2h.append(h2h)
+        
+        
+        fill_h2h(all_h2h)
+    
+    except Exception as e:
+        print(f"Error : {e}")
+
+
+def get_date():
+    global driver
+    
+    if driver:
+        date_element = driver.find_element(By.XPATH, "//button[@id='calendarMenu']")
+        date = date_element.text.replace("/", "-")
+        print(date)
+        return date
+        
+def final_h2h_result(accumalator, home, away):
+    
+    homeTotal = 0
+    awayTotal = 0
+    drawTotal = 0
+    
+    for title in accumalator:
+        
+        if title == home:
+            homeTotal += 1
+        elif title == away:
+            awayTotal += 1
+        elif title == "draw":
+            drawTotal += 1
+    
+    print(f"home: {homeTotal}, away: {awayTotal}, draw: {drawTotal}")    
+    return (f"home: {homeTotal}, away: {awayTotal}, draw: {drawTotal}")
+
+def calculate_h2h(HomeT, AwayT, result):
+    
+    # split result
+    try:
+        RS = result.split()
+        HS = int(RS[0])
+        AS = int(RS[1])
+    except:
+        pass
+    
+    # conditions
+    if HS > AS:
+        return HomeT
+    elif AS > HS:
+        return(AwayT)
+    elif HS == AS:
+        return "draw"
+    else:
+        return None
+    
+def get_h2h_total():
+    global driver
+    
+    accumalator = []
+    
+    driver.implicitly_wait(24)
+    
+    home, away = get_team_name()
+    
+    sleep(2)
+    
+    # driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+    
+    try:
+        h2h_position = driver.find_element(By.XPATH, "//*[@id='detail']/div[@class='h2hSection']/div[@class='h2h']/div[3]")
+        
+        # find the 3rd div .. for h2h
+        h2h_show_more = driver.find_element(By.XPATH, "//*[@id='detail']/div[@class='h2hSection']/div[@class='h2h']/div[3]/div[@class='showMore']")
+    except:
+        print("Error getting showmore...")
+        pass
+    
+    driver.execute_script("arguments[0].scrollIntoView();", h2h_position)
+    
+    # click h2h_tag while is exist
+    count = 0
+    try:
+        while h2h_show_more:
+            count+=1
+            sleep(1)
+            driver.implicitly_wait(10)
+            h2h_show_more.click()
+    except:
+        print("No show more again..")
+        pass
+    print(count)
+    
+    try:
+        # get the h2h table 
+        h2h_main_tag = driver.find_element(By.XPATH, "//*[@id='detail']/div[@class='h2hSection']/div[@class='h2h']/div[3]/div[@class='rows']")
+        
+        child_divs = h2h_main_tag.find_elements(By.TAG_NAME, "div")
+        
+        for child_div in child_divs:
+
+            # Find specific elements within the child div
+            home_element = child_div.find_element(By.CSS_SELECTOR, "span.h2h__participant.h2h__homeParticipant")
+            homeT = home_element.text
+            
+            away_element = child_div.find_element(By.CSS_SELECTOR, "span.h2h__participant.h2h__awayParticipant")
+            awayT = away_element.text
+            
+            result_element = child_div.find_element(By.CSS_SELECTOR, "span.h2h__result")
+            result = result_element.text
+            
+            stat = calculate_h2h(homeT, awayT, result)
+            
+            accumalator.append(stat)
+    except:
+        print("Error getting h2h..")
+        pass
+    
+    return final_h2h_result(accumalator, home, away)
+
 def calculate_abs(cellvalue):
     try:
         numbers = cellvalue.split('-')
@@ -37,7 +194,6 @@ def calculate_abs(cellvalue):
     except:
         return 0
 
-
 def get_analysis(e):
     
     # Get the total number of rows with content
@@ -46,6 +202,7 @@ def get_analysis(e):
     print("Total rows with content:", total_rows)
     
     for row in range(total_rows):
+        rowSheet = sheet[row + 1]
   
         if row == 0:
             print("skip")
@@ -81,19 +238,16 @@ def get_analysis(e):
                 
 
             if (cellJJ > 2) and (str(cellK.value).lower() == "w"):
-                row1 = sheet[row + 1]
                 
-                for index, r in enumerate(row1):
-                    r.fill = PatternFill("solid", fgColor="00CCFFFF")
+                for index, r in enumerate(rowSheet):
+                    r.fill = PatternFill("solid", fgColor="003366FF")
                     if index > len(sheet['A:V']):
                         break
  
                 
-            if (cellJJ > 2) and (str(cellK.value).lower() == "w"):
-                row1 = sheet[row + 1]
-                
-                for index, r in enumerate(row1):
-                    r.fill = PatternFill("solid", fgColor="00CCFFFF")
+            if (cellMM > 3) and (str(cellN.value).lower() == "w"):
+                for index, r in enumerate(rowSheet):
+                    r.fill = PatternFill("solid", fgColor="00FF8080")
                     if index > len(sheet['A:V']):
                         break
                 
@@ -102,8 +256,6 @@ def get_analysis(e):
     workbook.save(file_path)
     os.startfile(file_path)
 
-    
-### putting the score to the excel file.. back..
 def fill_score(all_scores):
     last_row = len(all_scores)
     
@@ -143,13 +295,13 @@ def get_all_scores(e):
 
         for score_url in scores_urls:
             sleep(3)
-            print(score_url)
+            # print(score_url)
             score = open_url_score(score_url)
             all_scores.append(score)
         
         fill_score(all_scores)
 
-def get_scores(e):
+def open_broswer_alt(e):
     global driver
     
     try:  
@@ -220,13 +372,15 @@ def auto_run_data(e):
         auto_run_btn.disabled = True
         auto_run_btn.update()
         
+        date = get_date()
+        
         all_urls = get_all_matches_url(e)
         
         open_new_tab(e)
         
         data = url_process(e, all_urls)
         
-        save_file(data=data)
+        save_file(data, date)
 
         sleep(2)
         
@@ -254,6 +408,8 @@ def url_process(e, all_urls):
             try:
                 gltH = get_last_team_home()
                 gltW = get_last_team_away()
+                
+                
             except Exception as e:
                 print(f"Error fro getting last team") 
                 pass 
@@ -262,7 +418,13 @@ def url_process(e, all_urls):
             except:
                 print("Error getting teams")
                 pass
+            
+            
+            sleep(1)
+            h2h = get_h2h_total()
             sleep(3)
+            
+            
             details_from_table(e, teams)
     
             my_Hypo = my_hypothesis()
@@ -291,6 +453,8 @@ def url_process(e, all_urls):
                     "p4": p4,
                     "Hypothesis": my_Hypo,
                     "Hypothesis2": my_Hypo2,
+                    "Scores": None,
+                    "H2h": h2h
                 })
             except:
                 print("Error fixing table")
@@ -336,10 +500,12 @@ def auto_open():
         os.makedirs(directory_path, exist_ok=True)
         files = []
         
-def save_file(data):
+def save_file(data, date):
     
-    today = datetime.date.today()
-    filename = f"{selection}_{today.strftime('%Y-%m-%d')}.xlsx"
+    # today = datetime.date.today()
+    
+    # filename = f"{selection}_{today.strftime('%Y-%m-%d')}.xlsx"
+    filename = f"{selection}_{date}.xlsx"
     try:
         directory = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output_data")
     except FileNotFoundError:
@@ -374,9 +540,6 @@ def my_hypothesis2():
     except Exception as e:
         print(f"Error getting hypo")
         return None
-    
-
-
 
 def reset():
     global p1, p2, p3, p4, h1, dX, w2, home, away, score1, score2
@@ -490,8 +653,8 @@ def get_last_match(e):
         try:
             driver.implicitly_wait(60)
             
-            h2h = driver.find_element(By.XPATH, "//button[normalize-space()='H2H']")
-            h2h.click()
+            h2h_tab = driver.find_element(By.XPATH, "//button[normalize-space()='H2H']")
+            h2h_tab.click()
             
             #logic...
             home_last_game_tag = driver.find_element(By.XPATH, "//body/div[@class='container__detail']/div[@id='detail']/div[@class='h2hSection']/div[@class='h2h']/div[1]/div[2]/div[1]")
@@ -532,9 +695,36 @@ def get_odds(e):
         h1 = odds_list[1]
         dX = odds_list[3]
         w2 = odds_list[5]
-     
+   
+def get_team_name():
+    global driver
+    
+    try:
+        # home_tag = driver.find_element(By.CSS_SELECTOR, "div[class='duelParticipant__home '] a[class='participant__participantName participant__overflow ']")
+        
+        home_tag = driver.find_element(By.XPATH, 
+        "//*[@id='detail']/div[@class='duelParticipant']/div[2]/div[@class='participant__participantNameWrapper']")
+        
+        home = home_tag.get_attribute("innerText")
+        print(f"home: {home}")
+                
+        driver.implicitly_wait(5)
+        
+        away_tag = driver.find_element(By.XPATH,  "//*[@id='detail']/div[@class='duelParticipant']/div[4]/div[@class='participant__participantNameWrapper']")
+        
+        # away_tag = driver.find_element(By.CSS_SELECTOR, "div[class='duelParticipant__away '] a[class='participant__participantName participant__overflow ']")
+        
+        away = away_tag.get_attribute("innerText")
+        print(f"away: {away}")
+        
+        return (home, away)
+        
+    except Exception as e:
+        print("Error getting match names.. ")
+        pass   
+  
 def open_url(url):
-    global home, away, driver
+    global driver, home, away
     
     if driver:
         try:
@@ -543,13 +733,7 @@ def open_url(url):
                 
                 driver.implicitly_wait(4)
                 
-                home_tag = driver.find_element(By.CSS_SELECTOR, "div[class='duelParticipant__home '] a[class='participant__participantName participant__overflow ']")
-                home = home_tag.get_attribute("innerText")
-                print(f"home: {home}")
-                
-                away_tag = driver.find_element(By.CSS_SELECTOR, "div[class='duelParticipant__away '] a[class='participant__participantName participant__overflow ']")
-                away = away_tag.get_attribute("innerText")
-                print(f"away: {away}")
+                home, away = get_team_name()
                 
                 driver.implicitly_wait(4)
         except Exception as e:
@@ -618,7 +802,7 @@ def odds_click(e):
     
     if driver:
         driver.find_element(By.XPATH, "//div[contains(text(),'Odds')]").click()
-
+        
 def away_filter_finish(e):
     global driver, selection
     
@@ -869,7 +1053,6 @@ def firefox_close(e):
         open.disabled = False
         open.update()
 
-
 def main(page: ft.Page):
     page.title = "SoccerProV1"
     page.window.left = 1000
@@ -995,11 +1178,13 @@ def main(page: ft.Page):
     file_btn = ft.OutlinedButton(text="Choose XLSX", icon="UPLOAD_FILE", on_click=lambda _: file_picker.pick_files(allowed_extensions=["xlsx"]))
     sftr = ft.Text("Search for the result")
     
-    scores_broswer_btn = ft.ElevatedButton("open broswer", icon="TABLE_BAR_OUTLINED", on_click=get_scores)
+    scores_broswer_btn = ft.ElevatedButton("open broswer", icon="TABLE_BAR_OUTLINED", on_click=open_broswer_alt)
     
     scores_btn = ft.ElevatedButton("visit url", icon="TABLE_BAR_OUTLINED", on_click=get_all_scores)
     
     analysis_btn = ft.ElevatedButton("Analysis", icon="SPORTS_BASEBALL", icon_color="yellow500", on_click=get_analysis)
+    
+    h2h_btn = ft.ElevatedButton("h2h", icon="HISTORY_EDU_SHARP", icon_color="blue500", on_click=get_h2h_total_old)
     
     selected_files = ft.Text()
     
@@ -1009,7 +1194,7 @@ def main(page: ft.Page):
                         ft.Row([file_btn], alignment=ft.MainAxisAlignment.CENTER,),
                         ft.Row([selected_files], alignment=ft.MainAxisAlignment.CENTER,),
                         ft.Row([scores_broswer_btn, scores_btn], alignment=ft.MainAxisAlignment.CENTER,),
-                        ft.Row([analysis_btn], alignment=ft.MainAxisAlignment.CENTER,),
+                        ft.Row([analysis_btn, h2h_btn],alignment=ft.MainAxisAlignment.CENTER,),
                     ], alignment=ft.MainAxisAlignment.CENTER,)
                 )
     
